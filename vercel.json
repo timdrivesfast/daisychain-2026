@@ -4,9 +4,8 @@
   "installCommand": "npm install",
   "framework": null,
   "outputDirectory": "build/client",
-  "serverFiles": ["build/server/**"],
   "functions": {
-    "build/server/index.js": {
+    "build/server/**/*.js": {
       "runtime": "nodejs20.x"
     }
   },
