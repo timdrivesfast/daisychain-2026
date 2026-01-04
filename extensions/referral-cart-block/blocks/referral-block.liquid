@@ -1,0 +1,194 @@
+{% comment %}
+  Daisychain Referral Widget
+  Floating widget that appears on any page with a side tab and modal
+{% endcomment %}
+
+<div
+  class="daisychain-referral-widget"
+  id="daisychain-referral-widget"
+  data-cart-token="{{ cart.token }}"
+  {{ block.shopify_attributes }}
+>
+  <!-- Floating trigger button -->
+  <button 
+    type="button" 
+    id="referral-trigger-btn" 
+    class="referral-trigger"
+    aria-label="{{ 'extensions.referral_block.trigger_label' | t }}"
+  >
+    <span class="referral-trigger-text">{{ 'extensions.referral_block.trigger_text' | t }}</span>
+  </button>
+
+  <!-- Side Panel -->
+  <div id="referral-modal-overlay" class="referral-modal-overlay" style="display: none;">
+    <div class="referral-modal">
+      <button 
+        type="button" 
+        id="referral-modal-close" 
+        class="referral-modal-close"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      
+      <!-- Step 1: Were you referred? -->
+      <div id="referral-step-1" class="referral-step">
+        <div class="referral-modal-content">
+          <div class="referral-modal-header">
+            <h2 class="referral-modal-title">
+              {{ 'extensions.referral_block.question' | t }} 😃
+            </h2>
+          </div>
+          
+          <div class="referral-buttons-group">
+            <button type="button" id="referral-yes-btn" class="referral-choice-btn">
+              Yes
+            </button>
+            <button type="button" id="referral-no-btn" class="referral-choice-btn">
+              No
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Enter referrer name (shown when Yes is clicked) -->
+      <div id="referral-step-2" class="referral-step" style="display: none;">
+        <div class="referral-modal-content">
+          <button 
+            type="button" 
+            id="referral-back-btn" 
+            class="referral-back-btn"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <div class="referral-modal-header">
+            <h2 class="referral-modal-title">
+              {{ 'extensions.referral_block.name_question' | t }} ✍️
+            </h2>
+            <div class="referral-offer-badge" id="referral-offer-badge">
+              Get 10% Off
+            </div>
+          </div>
+          
+          <div class="referral-form">
+            <div class="referral-input-group">
+              <input
+                type="text"
+                id="referrer-name-input"
+                name="referrer-name"
+                placeholder="{{ 'extensions.referral_block.placeholder' | t }}"
+                autocomplete="off"
+                class="referral-input"
+              />
+            </div>
+            <button type="button" id="validate-referrer-btn" class="validate-btn">
+              {{ 'extensions.referral_block.validate_button' | t }}
+            </button>
+            
+            <div id="referral-message" class="referral-message" style="display: none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Success Celebration (shown when referral is applied) -->
+      <div id="referral-step-4" class="referral-step referral-success-step" style="display: none;">
+        <div class="referral-modal-content">
+          <div class="referral-success-content">
+            <div class="success-icon">🎉</div>
+            <h2 class="referral-modal-title success-title">
+              Reward Unlocked!
+            </h2>
+            <p class="referral-success-message" id="referral-success-message">
+              You'll get a discount thanks to your referrer!
+            </p>
+            <div class="success-confetti">
+              <span class="confetti confetti-1">✨</span>
+              <span class="confetti confetti-2">🎊</span>
+              <span class="confetti confetti-3">⭐</span>
+              <span class="confetti confetti-4">💫</span>
+              <span class="confetti confetti-5">✨</span>
+              <span class="confetti confetti-6">🎉</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Encouragement (shown when No is clicked) -->
+      <div id="referral-step-3" class="referral-step" style="display: none;">
+        <div class="referral-modal-content">
+          <button 
+            type="button" 
+            id="referral-back-btn-step3" 
+            class="referral-back-btn"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <div class="referral-modal-header">
+            <h2 class="referral-modal-title">
+              {{ 'extensions.referral_block.encouragement_title' | t }} 🎉
+            </h2>
+          </div>
+          
+          <div class="referral-encouragement-content">
+            <p class="referral-modal-description">
+              {{ 'extensions.referral_block.encouragement_text' | t }}
+            </p>
+            
+            <div class="referral-benefits">
+              <div class="referral-benefit-item">
+                <span class="benefit-icon">✨</span>
+                <span>Make your first purchase</span>
+              </div>
+              <div class="referral-benefit-item">
+                <span class="benefit-icon">💳</span>
+                <span>Become eligible to refer others</span>
+              </div>
+              <div class="referral-benefit-item">
+                <span class="benefit-icon">💰</span>
+                <span>Earn <strong class="credit-amount">$5.00</strong> for each successful referral!</span>
+              </div>
+            </div>
+            
+            <!-- Check if already a referrer -->
+            <div class="referral-check-referrer-section">
+              <p class="referral-check-referrer-text">Already made a purchase? Check if you're eligible to refer:</p>
+              <div class="referral-check-referrer-form">
+                <input
+                  type="text"
+                  id="check-referrer-name-input"
+                  name="check-referrer-name"
+                  placeholder="Enter your full name"
+                  autocomplete="off"
+                  class="referral-input"
+                />
+                <button type="button" id="check-referrer-btn" class="validate-btn">
+                  Check Status
+                </button>
+              </div>
+              <div id="referrer-status-message" class="referral-message" style="display: none;"></div>
+            </div>
+            
+            <button type="button" id="continue-shopping-btn" class="continue-shopping-btn">
+              Continue Shopping →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Daisychain Referral",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["*"]
+  },
+  "stylesheet": "referral-block.css",
+  "javascript": "referral-block.js",
+  "settings": []
+}
+{% endschema %}

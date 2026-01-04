@@ -1,0 +1,80 @@
+{
+  "payload": {
+    "export": "cart_lines_discounts_generate_run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "amount": "100.00"
+          }
+        },
+        "referralValidated": {
+          "value": "true"
+        },
+        "referrerCustomerId": {
+          "value": "gid://shopify/Customer/123456789"
+        }
+      },
+      "discount": {
+        "discountClasses": ["ORDER"],
+        "metafield": {
+          "namespace": "$app:daisychain",
+          "key": "config",
+          "jsonValue": {
+            "referee_discount_percentage": 10.0,
+            "referee_min_order": 0.0,
+            "referrer_credit_amount": 5.0,
+            "min_referrer_orders": 1
+          }
+        }
+      },
+      "localization": {
+        "country": {
+          "isoCode": "US"
+        },
+        "language": {
+          "isoCode": "EN"
+        }
+      },
+      "presentmentCurrencyRate": "1.0",
+      "shop": {
+        "localTime": {
+          "date": "2025-01-15",
+          "timeAfter": false,
+          "timeBefore": false,
+          "timeBetween": false
+        }
+      }
+    }
+  },
+  "expectedOutput": {
+    "operations": [
+      {
+        "orderDiscountsAdd": {
+          "selectionStrategy": "FIRST",
+          "candidates": [
+            {
+              "message": "Referral discount: 10% off",
+              "targets": [
+                {
+                  "orderSubtotal": {
+                    "excludedCartLineIds": []
+                  }
+                }
+              ],
+              "value": {
+                "percentage": {
+                  "value": "10.0"
+                }
+              },
+              "conditions": null,
+              "associatedDiscountCode": null
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+

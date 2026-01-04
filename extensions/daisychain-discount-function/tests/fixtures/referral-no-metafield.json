@@ -1,0 +1,46 @@
+{
+  "payload": {
+    "export": "cart_lines_discounts_generate_run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "amount": "100.00"
+          }
+        },
+        "referralValidated": {
+          "value": "true"
+        },
+        "referrerCustomerId": {
+          "value": "gid://shopify/Customer/123456789"
+        }
+      },
+      "discount": {
+        "discountClasses": ["ORDER"],
+        "metafield": null
+      },
+      "localization": {
+        "country": {
+          "isoCode": "US"
+        },
+        "language": {
+          "isoCode": "EN"
+        }
+      },
+      "presentmentCurrencyRate": "1.0",
+      "shop": {
+        "localTime": {
+          "date": "2025-01-15",
+          "timeAfter": false,
+          "timeBefore": false,
+          "timeBetween": false
+        }
+      }
+    }
+  },
+  "expectedOutput": {
+    "operations": []
+  }
+}
+

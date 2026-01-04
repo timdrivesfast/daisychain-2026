@@ -1,0 +1,19 @@
+{
+  "extensions": {
+    "referral_block": {
+      "schema": {
+        "name": "Daisychain Referral"
+      },
+      "title": "Were you referred?",
+      "subtitle": "Enter the name of the person who referred you",
+      "placeholder": "Full name",
+      "validate_button": "Submit",
+      "trigger_text": "Get",
+      "trigger_label": "Open referral form",
+      "question": "Were you referred by someone?",
+      "name_question": "Who referred you?",
+      "encouragement_title": "Become a Referrer!",
+      "encouragement_text": "Make a purchase to become a referrer and get $5.00 for each successful referral!"
+    }
+  }
+}

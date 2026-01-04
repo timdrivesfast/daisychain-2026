@@ -1,0 +1,28 @@
+query Input {
+  cart {
+    buyerIdentity {
+      customer {
+        metafield(namespace: "$app:daisychain", key: "referral_credits") {
+          value
+        }
+      }
+    }
+    cost {
+      subtotalAmount {
+        amount
+      }
+    }
+    referralValidated: attribute(key: "referral_validated") {
+      value
+    }
+    referrerCustomerId: attribute(key: "referrer_customer_id") {
+      value
+    }
+  }
+  discount {
+    discountClasses
+    metafield(namespace: "$app:daisychain", key: "config") {
+      jsonValue
+    }
+  }
+}
