@@ -91,6 +91,32 @@
         </div>
       </div>
 
+      <!-- Step 2.5: Select from duplicate names (shown when multiple matches found) -->
+      <div id="referral-step-2-5" class="referral-step" style="display: none;">
+        <div class="referral-modal-content">
+          <button 
+            type="button" 
+            id="referral-back-btn-dup" 
+            class="referral-back-btn"
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <div class="referral-modal-header">
+            <h2 class="referral-modal-title">
+              Multiple matches found 🔍
+            </h2>
+            <p class="referral-modal-description" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+              We found multiple people with that name. Please select the correct one:
+            </p>
+          </div>
+          
+          <div class="referral-duplicates-list" id="referral-duplicates-list">
+            <!-- Duplicate options will be inserted here by JavaScript -->
+          </div>
+        </div>
+      </div>
+
       <!-- Step 4: Success Celebration (shown when referral is applied) -->
       <div id="referral-step-4" class="referral-step referral-success-step" style="display: none;">
         <div class="referral-modal-content">

@@ -1,5 +1,5 @@
 {
-  "name": "referral-company",
+  "name": "daisychain",
   "private": true,
   "scripts": {
     "build": "react-router build",

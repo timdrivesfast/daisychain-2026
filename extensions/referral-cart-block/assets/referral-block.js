@@ -37,11 +37,13 @@
   const modalClose = document.getElementById('referral-modal-close');
   const step1 = document.getElementById('referral-step-1');
   const step2 = document.getElementById('referral-step-2');
+  const step2_5 = document.getElementById('referral-step-2-5');
   const step3 = document.getElementById('referral-step-3');
   const step4 = document.getElementById('referral-step-4');
   const yesBtn = document.getElementById('referral-yes-btn');
   const noBtn = document.getElementById('referral-no-btn');
   const backBtn = document.getElementById('referral-back-btn');
+  const backBtnDup = document.getElementById('referral-back-btn-dup');
   const backBtnStep3 = document.getElementById('referral-back-btn-step3');
   const continueShoppingBtn = document.getElementById('continue-shopping-btn');
   const input = document.getElementById('referrer-name-input');
@@ -51,8 +53,9 @@
   const checkReferrerInput = document.getElementById('check-referrer-name-input');
   const checkReferrerBtn = document.getElementById('check-referrer-btn');
   const referrerStatusMessage = document.getElementById('referrer-status-message');
+  const duplicatesList = document.getElementById('referral-duplicates-list');
 
-  if (!triggerBtn || !modalOverlay || !modalClose || !step1 || !step2 || !step3 || !step4 || !yesBtn || !noBtn || !continueShoppingBtn || !input || !validateBtn || !message || !successMessage || !checkReferrerInput || !checkReferrerBtn || !referrerStatusMessage) return;
+  if (!triggerBtn || !modalOverlay || !modalClose || !step1 || !step2 || !step2_5 || !step3 || !step4 || !yesBtn || !noBtn || !continueShoppingBtn || !input || !validateBtn || !message || !successMessage || !checkReferrerInput || !checkReferrerBtn || !referrerStatusMessage || !backBtnDup || !duplicatesList) return;
 
   // Get shop domain from current URL
   const shopDomain = window.Shopify?.shop || window.location.hostname;
@@ -346,6 +349,7 @@
     if (isReferralValidated) {
       step1.style.display = 'none';
       step2.style.display = 'none';
+      step2_5.style.display = 'none';
       step3.style.display = 'none';
       step4.style.display = 'block';
       
@@ -369,6 +373,7 @@
     // Show step 1, hide others (normal flow)
     step1.style.display = 'block';
     step2.style.display = 'none';
+    step2_5.style.display = 'none';
     step3.style.display = 'none';
     step4.style.display = 'none';
     // Reset form
@@ -402,7 +407,9 @@
   function showNameInput() {
     step1.style.display = 'none';
     step2.style.display = 'block';
+    step2_5.style.display = 'none';
     step3.style.display = 'none';
+    step4.style.display = 'none';
     // Clear input and start typewriter effect
     input.value = '';
     // Start typewriter after a short delay to let the animation finish
@@ -417,6 +424,7 @@
   function showEncouragement() {
     step1.style.display = 'none';
     step2.style.display = 'none';
+    step2_5.style.display = 'none';
     step3.style.display = 'block';
     // Update encouragement text with current credit amount
     updateEncouragementText();
@@ -542,6 +550,132 @@
   }
 
   /**
+   * Show duplicate selection step when multiple customers match the name
+   */
+  function showDuplicateSelection(customers, referrerName) {
+    // Clear previous duplicates
+    duplicatesList.innerHTML = '';
+    
+    // Create option buttons for each duplicate
+    customers.forEach((customer, index) => {
+      const optionDiv = document.createElement('div');
+      optionDiv.className = 'referral-duplicate-option';
+      optionDiv.innerHTML = `
+        <div class="referral-duplicate-info">
+          <div class="referral-duplicate-name">${customer.displayName}</div>
+          <div class="referral-duplicate-email">${customer.anonymizedEmail}</div>
+        </div>
+      `;
+      
+      // Add click handler to select this customer
+      optionDiv.addEventListener('click', () => {
+        selectDuplicateCustomer(customer);
+      });
+      
+      duplicatesList.appendChild(optionDiv);
+    });
+    
+    // Hide step 2, show step 2.5
+    step2.style.display = 'none';
+    step2_5.style.display = 'block';
+    step3.style.display = 'none';
+    step4.style.display = 'none';
+  }
+
+  /**
+   * Handle selection of a duplicate customer
+   */
+  async function selectDuplicateCustomer(customer) {
+    // Disable all options during processing
+    const options = duplicatesList.querySelectorAll('.referral-duplicate-option');
+    options.forEach(opt => {
+      opt.style.pointerEvents = 'none';
+      opt.style.opacity = '0.6';
+    });
+
+    try {
+      // Update cart with selected customer
+      const cartUpdateResponse = await fetch('/cart/update.js', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          attributes: {
+            referral_validated: 'true',
+            referrer_customer_id: customer.id,
+            referrer_name: customer.displayName,
+          },
+        }),
+      });
+
+      if (!cartUpdateResponse.ok) {
+        throw new Error('Cart update failed');
+      }
+
+      const cartData = await cartUpdateResponse.json();
+      console.log('Daisychain: Cart attributes updated successfully for duplicate', cartData);
+      
+      // Verify attributes were set
+      const verifyCart = await fetch('/cart.js');
+      const verifiedCart = await verifyCart.json();
+      
+      if (!verifiedCart.attributes || verifiedCart.attributes.referral_validated !== 'true') {
+        console.error('Daisychain: Cart attributes verification failed!', verifiedCart.attributes);
+        showMessage('Failed to verify cart attributes. Please try again.', true);
+        // Re-enable options
+        options.forEach(opt => {
+          opt.style.pointerEvents = 'auto';
+          opt.style.opacity = '1';
+        });
+        return;
+      }
+      
+      console.log('Daisychain: ✅ Cart attributes verified for duplicate:', {
+        referral_validated: verifiedCart.attributes.referral_validated,
+        referrer_customer_id: verifiedCart.attributes.referrer_customer_id,
+      });
+
+      // Success! Mark as validated and show celebration
+      isReferralValidated = true;
+      validatedReferrerName = customer.displayName;
+      
+      // Save to localStorage
+      localStorage.setItem('daisychain_referral_validated', 'true');
+      localStorage.setItem('daisychain_referrer_name', validatedReferrerName);
+      
+      // Hide step 2.5, show celebration step
+      step2_5.style.display = 'none';
+      step4.style.display = 'block';
+      
+      // Update success message with referrer name
+      successMessage.textContent = `You'll get a discount thanks to ${customer.displayName}!`;
+      
+      // Update trigger button to checkmark
+      updateTriggerToCheckmark();
+      
+      // Trigger confetti animation
+      triggerConfetti();
+      
+      // Close modal after celebration (2.5 seconds)
+      setTimeout(() => {
+        closeModal();
+        // Reload page to show discount and update trigger button
+        window.location.reload();
+      }, 2500);
+
+    } catch (error) {
+      console.error('Daisychain referral error (duplicate selection):', error);
+      showMessage('An error occurred. Please try again.', true);
+      // Re-enable options
+      options.forEach(opt => {
+        opt.style.pointerEvents = 'auto';
+        opt.style.opacity = '1';
+      });
+    }
+  }
+
+  /**
    * Validate referrer name and update cart attributes
    */
   async function validateAndSetReferrer() {
@@ -572,6 +706,15 @@
       if (!lookupResponse.ok) {
         // Show the specific error message from the server
         showMessage(lookupData.error || 'Failed to validate referrer. Please try again.', true);
+        validateBtn.disabled = false;
+        validateBtn.textContent = 'Submit';
+        return;
+      }
+      
+      // Check for duplicates (multiple customers with same name)
+      if (lookupData.duplicates && lookupData.customers && lookupData.customers.length > 1) {
+        // Show duplicate selection step
+        showDuplicateSelection(lookupData.customers, referrerName);
         validateBtn.disabled = false;
         validateBtn.textContent = 'Submit';
         return;
@@ -702,6 +845,7 @@
     backBtn.addEventListener('click', () => {
       step1.style.display = 'block';
       step2.style.display = 'none';
+      step2_5.style.display = 'none';
       step3.style.display = 'none';
       step4.style.display = 'none';
       hideMessage();
@@ -715,9 +859,27 @@
     backBtnStep3.addEventListener('click', () => {
       step1.style.display = 'block';
       step2.style.display = 'none';
+      step2_5.style.display = 'none';
       step3.style.display = 'none';
       step4.style.display = 'none';
       hideMessage();
+    });
+  }
+
+  // Back button for step 2.5 (duplicate selection - goes back to step 2)
+  if (backBtnDup) {
+    backBtnDup.addEventListener('click', () => {
+      step2.style.display = 'block';
+      step2_5.style.display = 'none';
+      step3.style.display = 'none';
+      step4.style.display = 'none';
+      hideMessage();
+      // Clear duplicates list
+      duplicatesList.innerHTML = '';
+      // Re-enable input and button
+      input.disabled = false;
+      validateBtn.disabled = false;
+      validateBtn.textContent = 'Submit';
     });
   }
 

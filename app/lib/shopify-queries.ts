@@ -160,6 +160,147 @@ export async function findCustomerByName(
 }
 
 /**
+ * Find all customers matching a name (for duplicate detection)
+ * Returns array of all matching customers with orders
+ */
+export async function findCustomersByName(
+  admin: AdminApiContext,
+  name: string,
+): Promise<Array<{
+  id: string;
+  email: string;
+  displayName: string;
+}>> {
+  // Split name into first and last (simple approach)
+  const nameParts = name.trim().split(/\s+/);
+  const firstName = nameParts[0] || "";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
+  // Build query string for customer search
+  let searchQuery = `first_name:'${firstName.replace(/'/g, "\\'")}'`;
+  if (lastName) {
+    searchQuery += ` AND last_name:'${lastName.replace(/'/g, "\\'")}'`;
+  }
+  
+  console.log(`[findCustomersByName] Search query: "${searchQuery}" (firstName: "${firstName}", lastName: "${lastName}")`);
+
+  const query = `#graphql
+    query FindCustomersByName($query: String!) {
+      customers(first: 10, query: $query) {
+        edges {
+          node {
+            id
+            defaultEmailAddress {
+              emailAddress
+            }
+            displayName
+            numberOfOrders
+            orders(first: 1) {
+              edges {
+                node {
+                  id
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await admin.graphql(query, {
+      variables: {
+        query: searchQuery,
+      },
+    });
+
+    const data = await response.json() as any;
+    
+    if (data.errors) {
+      console.error("GraphQL errors in findCustomersByName:", JSON.stringify(data.errors, null, 2));
+      const errorMessage = data.errors[0]?.message || "";
+      if (errorMessage.includes("Protected Customer Data") || errorMessage.includes("not approved")) {
+        throw new Error("Protected Customer Data access not enabled.");
+      }
+      throw new Error(`GraphQL error: ${errorMessage}`);
+    }
+    
+    if (!data.data) {
+      console.error("No data in GraphQL response:", JSON.stringify(data, null, 2));
+      throw new Error("No data returned from GraphQL query");
+    }
+    
+    const customers = data.data?.customers?.edges || [];
+    const normalizedSearch = name.toLowerCase().trim();
+    const searchParts = normalizedSearch.split(/\s+/);
+    const matchingCustomers: Array<{
+      id: string;
+      email: string;
+      displayName: string;
+    }> = [];
+    
+    console.log(`[findCustomersByName] Searching for: "${name}"`);
+    console.log(`[findCustomersByName] Found ${customers.length} customers matching query`);
+
+    for (const edge of customers) {
+      const customer = edge.node;
+      const normalizedName = customer.displayName?.toLowerCase().trim() || "";
+      const numberOfOrders = customer.numberOfOrders || 0;
+      const hasOrders = (customer.orders?.edges?.length || 0) > 0;
+      
+      // Only include customers who have made at least one purchase
+      if (!hasOrders && numberOfOrders === 0) {
+        continue;
+      }
+      
+      // Check for exact or partial match
+      const isExactMatch = normalizedName === normalizedSearch;
+      const allPartsMatch = searchParts.every(part => normalizedName.includes(part));
+      
+      if (isExactMatch || allPartsMatch) {
+        matchingCustomers.push({
+          id: customer.id,
+          email: customer.defaultEmailAddress?.emailAddress || "",
+          displayName: customer.displayName || name,
+        });
+      }
+    }
+    
+    console.log(`[findCustomersByName] Found ${matchingCustomers.length} matching customers with orders`);
+    return matchingCustomers;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in findCustomersByName GraphQL call:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Anonymize email address for display (e.g., "j***@example.com")
+ */
+export function anonymizeEmail(email: string): string {
+  if (!email || !email.includes("@")) {
+    return "***@***.***";
+  }
+  
+  const [localPart, domain] = email.split("@");
+  if (localPart.length <= 2) {
+    return `${localPart[0]}***@${domain}`;
+  }
+  
+  // Show first character, then stars, then last character before @
+  const firstChar = localPart[0];
+  const lastChar = localPart[localPart.length - 1];
+  const middleStars = "***";
+  
+  return `${firstChar}${middleStars}${lastChar}@${domain}`;
+}
+
+/**
  * Get customer by ID (for email notifications)
  */
 export async function getCustomerById(

@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "2e491639d4aac4af9be1df4b408fb9ac"
-name = "referral-company"
+name = "Daisychain"
 application_url = "https://daisychain-2026.vercel.app"
 embedded = true
 
@@ -9,7 +9,7 @@ embedded = true
 automatically_update_urls_on_dev = true
 
 [webhooks]
-api_version = "2026-01"
+api_version = "2025-10"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
@@ -24,16 +24,17 @@ api_version = "2026-01"
   uri = "/webhooks/orders/create"
 
   # Mandatory compliance webhooks for customer privacy (GDPR)
+  # Compliance webhooks must use compliance_topics instead of topics
   [[webhooks.subscriptions]]
-  topics = [ "customers/redact" ]
+  compliance_topics = [ "customers/redact" ]
   uri = "/webhooks/customers/redact"
 
   [[webhooks.subscriptions]]
-  topics = [ "customers/data_request" ]
+  compliance_topics = [ "customers/data_request" ]
   uri = "/webhooks/customers/data_request"
 
   [[webhooks.subscriptions]]
-  topics = [ "shop/redact" ]
+  compliance_topics = [ "shop/redact" ]
   uri = "/webhooks/shop/redact"
 
 [access_scopes]

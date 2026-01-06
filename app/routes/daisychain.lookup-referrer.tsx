@@ -10,7 +10,7 @@
 
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
-import { findCustomerByName } from "../lib/shopify-queries";
+import { findCustomerByName, findCustomersByName, anonymizeEmail } from "../lib/shopify-queries";
 
 /**
  * Set headers for app proxy responses
@@ -152,10 +152,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    // Search for customer by name
-    const customer = await findCustomerByName(admin, referrerName.trim());
+    // Search for all customers matching the name (to detect duplicates)
+    const matchingCustomers = await findCustomersByName(admin, referrerName.trim());
 
-    if (!customer) {
+    if (matchingCustomers.length === 0) {
       return Response.json(
         { 
           error: "referrer_not_found", 
@@ -170,8 +170,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    // Return customer info for cart attributes
-    // Pass shop domain via header for CSP in headers function
+    // If multiple customers found, return duplicates with anonymized emails
+    if (matchingCustomers.length > 1) {
+      return Response.json(
+        {
+          success: false,
+          duplicates: true,
+          customers: matchingCustomers.map(customer => ({
+            id: customer.id,
+            displayName: customer.displayName,
+            anonymizedEmail: anonymizeEmail(customer.email),
+          })),
+        },
+        {
+          headers: {
+            "x-proxy-shop-domain": shop,
+          },
+        },
+      );
+    }
+
+    // Single match found - return customer info for cart attributes
+    const customer = matchingCustomers[0];
     return Response.json(
       {
         success: true,
